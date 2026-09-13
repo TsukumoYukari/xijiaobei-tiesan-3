@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>西交杯第三届铁人三项赛 · 得分计算器</title>
+<style>
+  :root{
+    --bg:#0e1116; --panel:#161b22; --panel2:#1c232d; --line:#2b3440;
+    --txt:#e6edf3; --muted:#8b98a5; --acc:#4aa8ff; --acc2:#7c5cff;
+    --good:#3fb950; --bad:#f85149; --warn:#d29922;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+    font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;font-size:14px;line-height:1.5}
+  h1{font-size:20px;margin:0}
+  h2{font-size:16px;margin:0 0 8px}
+  h4{font-size:13px;margin:14px 0 6px;color:var(--acc);letter-spacing:.5px;
+     border-bottom:1px solid var(--line);padding-bottom:4px}
+  header.top{position:sticky;top:0;z-index:20;background:rgba(14,17,22,.96);
+    border-bottom:1px solid var(--line);padding:12px 18px;backdrop-filter:blur(6px)}
+  .top-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .sub{color:var(--muted);font-size:12px}
+  .wrap{max-width:1500px;margin:0 auto;padding:16px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:16px}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:1080px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+  .card>.chead{background:linear-gradient(90deg,#1d2735,#171c24);padding:10px 12px;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--line)}
+  .card>.cbody{padding:12px;flex:1}
+  input[type=text],input[type=number],select{
+    background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:7px;
+    padding:5px 8px;font-size:13px;font-family:inherit;outline:none;width:100%}
+  input[type=number]{text-align:right}
+  input:focus,select:focus{border-color:var(--acc)}
+  input[type=checkbox],input[type=radio]{width:16px;height:16px;accent-color:var(--acc);vertical-align:-3px;cursor:pointer}
+  label{display:block;color:var(--muted);font-size:12px}
+  label>input,label>select{margin-top:3px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}
+  .row4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px}
+  .playername{flex:1;font-weight:600}
+  .theme-sel{width:auto;min-width:190px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:left}
+  th{color:var(--muted);font-weight:600;font-size:11.5px}
+  td.c,th.c{text-align:center;width:52px}
+  .chk{display:flex;align-items:center;gap:8px;padding:4px 2px;color:var(--txt);font-size:12.5px;border-bottom:1px dashed #232b35}
+  .chk span{flex:1}
+  .chk b{color:var(--acc);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .chk.radio span{color:var(--txt)}
+  .hint{color:var(--muted);font-size:11.5px;margin-top:4px}
+  .box{border:1px solid var(--line);border-radius:9px;padding:6px 10px;margin:6px 0;background:#131922}
+  .result{margin-top:12px;background:linear-gradient(180deg,#101820,#0d1319);border-top:1px solid var(--line);padding:12px}
+  .res-main{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+  .res-main .lbl{color:var(--muted);font-size:12px}
+  .res-main .val{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums}
+  .bd{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .bd div{display:flex;justify-content:space-between;padding:1.5px 0}
+  .bd b{color:#c9d5e1;font-weight:600}
+  .pos{color:var(--good)}.neg{color:var(--bad)}
+  .summary-table td:first-child{color:var(--muted)}
+  .summary-table .num{color:var(--txt);font-weight:700;font-variant-numeric:tabular-nums}
+  .team-total{font-size:30px;font-weight:900;text-align:right;font-variant-numeric:tabular-nums}
+  .btn{background:var(--acc2);border:none;color:#fff;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--muted)}
+  .btn:active{transform:translateY(1px)}
+  .tabs{display:flex;gap:8px;margin-bottom:14px}
+  .tab{background:var(--panel);border:1px solid var(--line);color:var(--muted);
+    padding:8px 22px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;font-family:inherit}
+  .tab:hover{color:var(--txt);border-color:#3a4655}
+  .tab.active{background:linear-gradient(90deg,#26456b,#1d2f4a);color:#fff;border-color:var(--acc)}
+  details.doc{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:16px}
+  details.doc summary{cursor:pointer;color:var(--acc);font-weight:600}
+  details.doc ul{margin:8px 0 0;padding-left:20px;color:var(--muted);font-size:12.5px}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-row">
+    <div>
+      <h1>西交杯第三届铁人三项赛 · 得分计算器</h1>
+      <div class="sub">三人小队 · 个人得分 / 团队总分实时计算</div>
+    </div>
+    <div style="flex:1"></div>
+    <label style="min-width:190px;flex:0 0 auto">队伍名
+      <input type="text" id="teamName" placeholder="输入队伍名称">
+    </label>
+    <button class="btn" id="exportBtn">导出配置</button>
+    <button class="btn ghost" id="importBtn">导入配置</button>
+    <input type="file" id="importFile" accept=".json,application/json" hidden>
+    <div style="min-width:200px">
+      <div class="sub" style="text-align:right">团队总分</div>
+      <div class="team-total" id="teamTotal">0</div>
+    </div>
+    <button class="btn ghost" id="resetBtn">重置</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <details class="doc">
+    <summary>计分公式与口径说明</summary>
+    <ul>
+      <li><b>【萨卡兹的无终奇语】</b>:主题最终得分 =(游戏结算分 + 紧急加分 + 藏品加分 + 临时招募)× 结算分系数 + 结局得分(持有【滚动先祖】时结局得分 ×1.2）。结算时每个藏品 +5、每个紧急作战 +15。禁止选取藏品【无主的回忆】,每掉落一次补偿 +13(计入乘系数前的加分)。<b>紧急授课 / 思维矫正 / 朝谒 / 魂灵朝谒 四者互斥,五选一</b>;"同时通关 朝谒/魂灵朝谒 + 授法 + 不容拒绝"的 +300 由所选结局与授法、不容拒绝的勾选自动判定。不容拒绝:通关 +200;携带【终结的实相】+200,携带时思维混乱 +300、无漏 +150。分队系数:点刺 0.90 / 拟态 0.92 / 魂灵 0.95 / 博闻·职业队 1.00 / 其他 1.05。</li>
+      <li><b>【岁的界园志异】</b>：主题最终得分 =（游戏结算分 + 紧急加分 + 藏品加分 + 临时招募）× 结算分系数 + 结局得分 × 结局得分系数。紧急作战 +15/个；藏品分段：≤100 部分 +5/个，100~180 部分 −3/个，&gt;180 部分 −7.5/个。结局系数：基础 1.0，【不赦】+0.6、【忘生珍珑】+0.3、【云与漆】+0.6（仅持有【忘生珍珑】时才可能持有【云与漆】）。昔字如烟 / 往昔难忆 二选一、谋岁者 / 末狩 二选一；所有<b>定乾坤 / 止变合并为“五结局”下拉，单选其一</b>；定本源、役群兽不可用无漏加分，漏怪鼓励分合并为一个输入组。</li>
+      <li><b>【沉沦者的黑流树海】</b>：折算结算分 =（游戏结算分 + 结算加分 + 临时招募）× 结算分系数，上限 4500。结算加分 = 藏品×5 + 紧急作战×15 + 襁褓×40 + 零件×(−5)。主题最终得分 = 折算结算分 + 结局得分。<b>永无安宁 / 痛苦将息 / 混沌源阶理论 三者互斥（五选一含“无”）</b>，痛苦将息、混沌源阶理论均有无漏 +100；通关其中任一结局时结算【沙盘β】+100、【沙盘α】+50，二者同时持有额外 +50；持有【探测先锋】且至少持有一个沙盘藏品时，按层数给予&lt;痛苦将息&gt;额外分（1/2/3/4/5 层 = +50/+150/+250/+400/+500）。<b>畸症 +400</b>，追猎 +100、无漏 +100，三个畸症藏品选项仅在勾选畸症后出现。</li>
+      <li><b>临时招募</b>：六星 +30、五星 +20、四星 +10，按选手分别录入。</li>
+      <li><b>团队通用项</b>：厨力干员被临时招募每次 +100（团队通用，不乘主题系数）；每额外招募一名六星 −500、五星 −250；前瞻性投资系统余额超出 300 的部分每 1 源石锭 −50；三局总用时超出 8 小时的部分每分钟 −20。</li>
+      <li>若规则表述存在歧义，最终解释权归主办方所有；本计算器结果仅供参考，请以主办方最终裁定为准。</li>
+    </ul>
+  </details>
+
+  <!-- 视图切换 -->
+  <div class="tabs">
+    <button class="tab active" data-view="individual">个人算分</button>
+    <button class="tab" data-view="team">团队算分</button>
+  </div>
+
+  <!-- 个人算分界面 -->
+  <section id="view-individual">
+    <div class="grid" id="players"></div>
+  </section>
+
+  <!-- 团队算分界面 -->
+  <section id="view-team" style="display:none">
+    <!-- 团队通用 -->
+    <div class="panel">
+      <h2>团队通用项</h2>
+      <div class="row4">
+        <label>额外招募 · 六星次数（−500/次）<input type="number" class="f common" id="c_extra6" value="0" step="1"></label>
+        <label>额外招募 · 五星次数（−250/次）<input type="number" class="f common" id="c_extra5" value="0" step="1"></label>
+        <label>前瞻余额超额源石锭（−50/个）<input type="number" class="f common" id="c_overflow" value="0" step="1"></label>
+        <label>厨力干员被临招次数（+100/次）<input type="number" class="f common" id="c_chef" value="0" step="1"></label>
+        <label>三局总时长超 8 小时分钟数（−20/分）<input type="number" class="f common" id="c_overtime" value="0" step="1"></label>
+      </div>
+      <label style="text-align:right">团队通用净额
+        <b id="commonTotal" style="display:block;text-align:right;font-size:20px;margin-top:2px">0</b>
+      </label>
+    </div>
+
+    <div class="panel">
+      <h2>团队总分汇总</h2>
+      <table class="summary-table">
+        <thead><tr><th>选手</th><th>主题</th><th style="text-align:right">个人得分</th></tr></thead>
+        <tbody id="summaryBody"></tbody>
+        <tfoot>
+          <tr><td colspan="2"><b>个人得分小计</b></td><td class="num" id="personalSum" style="text-align:right">0</td></tr>
+          <tr><td colspan="2"><b>团队通用净额</b></td><td class="num" id="commonDeduct" style="text-align:right">0</td></tr>
+          <tr><td colspan="2"><b>团队总分</b></td><td class="num" id="grandTotal" style="text-align:right;font-size:18px">0</td></tr>
+        </tfoot>
+      </table>
+    </div>
+  </section>
+
+  <div class="sub" style="text-align:center;padding-bottom:24px">
+    分数均为实时计算 · 灰底为公式拆分明细
+  </div>
+</div>
+
+<script>
+/* ============ 工具 ============ */
+const $  = (root, sel) => root.querySelector(sel);
+const $$ = (root, sel) => Array.from(root.querySelectorAll(sel));
+const num = (root, sel) => { const el = $(root, sel); if(!el) return 0; const v = parseFloat(el.value); return isNaN(v) ? 0 : v; };
+const fmt = n => (Math.round(n * 100) / 100).toLocaleString('zh-CN', {maximumFractionDigits:2});
+const round4 = n => Math.round(n*10000)/10000;
+
+/* 普通勾选行 */
+function endChk(label, score, cls, tag){
+  return `<label class="chk"><input type="checkbox" class="f ${cls||'end'}" data-score="${score}"${tag?` data-tag="${tag}"`:''}><span>${label}</span><b>+${score}</b></label>`;
+}
+/* 单选行 */
+function radioChk(uid, group, key, label, score, checked, flaw){
+  return `<label class="chk radio"><input type="radio" class="f" name="${uid}_${group}" value="${key}" data-score="${score}" data-flaw="${flaw||0}" ${checked?'checked':''}><span>${label}</span><b>${score?('+'+score):'—'}</b></label>`;
+}
+/* 互斥对（带上无漏勾选） */
+function pairEnding(uid, group, flawCls, opts){
+  let h = `<div class="box">`;
+  opts.forEach((o,i) => { h += radioChk(uid, group, o.key, o.label, o.score, i===0, o.flaw); });
+  h += `<label class="chk"><input type="checkbox" class="f ${flawCls}"><span>无漏加分</span><b class="${flawCls}Val">—</b></label></div>`;
+  return h;
+}
+/* 关卡表（通过 + 无漏） */
+function stageTable(rows){
+  return `<table><thead><tr><th>关卡</th><th class="c">通过</th><th class="c">无漏</th></tr></thead><tbody>` +
+    rows.map(r => `<tr><td>${r[0]}</td>
+      <td class="c"><input type="checkbox" class="f stage" data-score="${r[1]}"></td>
+      <td class="c">${r[2] ? `<input type="checkbox" class="f flaw" data-score="${r[2]}">` : '—'}</td></tr>`).join('') +
+    `</tbody></table>`;
+}
+
+/* ============ 主题模板 ============ */
+const TPL = {};
+
+/* ---------- 萨卡兹的无终奇语 ---------- */
+TPL.sarkaz = (uid) => `
+  <div class="row3">
+    <label>游戏结算分<input type="number" class="f base" value="0"></label>
+    <label>藏品数量（+5/个）<input type="number" class="f collect" value="0" step="1"></label>
+    <label>【无主的回忆】掉落次数（+13/次）<input type="number" class="f wuzhu" value="0" step="1"></label>
+  </div>
+  <div class="row">
+    <label>结算分系数 · 分队
+      <select class="f coef">
+        <option value="1.05" selected>其他 → 1.05</option>
+        <option value="1">博闻 → 1.00</option>
+        <option value="1">职业队 → 1.00</option>
+        <option value="0.9">点刺 → 0.90</option>
+        <option value="0.92">拟态 → 0.92</option>
+        <option value="0.95">魂灵 → 0.95</option>
+      </select>
+    </label>
+    <label>紧急作战总数（+15/个）<input type="number" class="f emerCount" value="0" step="1"></label>
+  </div>
+
+  <h4>临时招募</h4>
+  <div class="row3">
+    <label>六星（+30）<input type="number" class="f t6" value="0" step="1"></label>
+    <label>五星（+20）<input type="number" class="f t5" value="0" step="1"></label>
+    <label>四星（+10）<input type="number" class="f t4" value="0" step="1"></label>
+  </div>
+
+  <h4>紧急作战加分（同一关卡取最优，不累加）</h4>
+  ${stageTable([
+    ['争议频发',40,20],['神出鬼没',50,20],['建制',40,20],
+    ['莱茵卫士',50,20],['洞天福地',60,20]
+  ])}
+
+  <h4>结局得分 · 险路恶敌</h4>
+  <div class="hint">以下四项互斥，五选一：</div>
+  ${radioChk(uid,'ex','none','无（不通关这四者）',0,true)}
+  ${radioChk(uid,'ex','jjsk','紧急授课',70)}
+  ${radioChk(uid,'ex','swjz','思维矫正',100)}
+  ${radioChk(uid,'ex','cy','朝谒',150)}
+  ${radioChk(uid,'ex','hlcy','魂灵朝谒',200)}
+  <label class="chk"><input type="checkbox" class="f confusion"><span>思维混乱加分（紧急授课/思维矫正 +10，朝谒/魂灵朝谒 +20）</span><b class="confValue">—</b></label>
+
+  <h4>授法</h4>
+  ${endChk('通关',200,'end','shoufa')}
+  ${endChk('思维混乱',100)}
+  ${endChk('击杀奎隆',200)}
+
+  <h4>不容拒绝</h4>
+  ${endChk('通关',200,'end','burong')}
+  ${endChk('携带【终结的实相】',200,'end','zhongshen')}
+  <div class="box zhongshenWrap">
+    ${endChk('携带【终结的实相】时 · 思维混乱',300)}
+    ${endChk('携带【终结的实相】时 · 无漏',150)}
+  </div>
+
+  <h4>其他</h4>
+  <div class="chk"><span>同时通关 朝谒/魂灵朝谒 + 授法 + 不容拒绝（自动判定）</span><b class="autoCombo">+0</b></div>
+  <label class="chk"><input type="checkbox" class="f mult" data-mult="0.2"><span>持有藏品【滚动先祖】</span><b>结局 ×1.2</b></label>
+`;
+
+/* ---------- 岁的界园志异 ---------- */
+TPL.sui = (uid) => `
+  <div class="row">
+    <label>游戏结算分<input type="number" class="f base" value="0"></label>
+    <label>藏品数量（分段计分）<input type="number" class="f collect" value="0" step="1"></label>
+  </div>
+  <div class="row">
+    <label>结算分系数 · 分队
+      <select class="f teamCoef">
+        <option value="1" selected>其他 → 1.00</option>
+        <option value="0.9">天师府 → 0.90</option>
+        <option value="0.92">代理人 → 0.92</option>
+        <option value="0.95">商贾 / 游客 → 0.95</option>
+      </select>
+    </label>
+    <label>紧急作战总数（+15/个）<input type="number" class="f emerCount" value="0" step="1"></label>
+  </div>
+
+  <h4>临时招募</h4>
+  <div class="row3">
+    <label>六星（+30）<input type="number" class="f t6" value="0" step="1"></label>
+    <label>五星（+20）<input type="number" class="f t5" value="0" step="1"></label>
+    <label>四星（+10）<input type="number" class="f t4" value="0" step="1"></label>
+  </div>
+
+  <h4>结局得分系数（基础 1.0）</h4>
+  <label class="chk"><input type="checkbox" class="f endCoef" data-coef="0.6"><span>持有【不赦】</span><b>+0.6</b></label>
+  <label class="chk"><input type="checkbox" class="f endCoef coef_wangsheng" data-coef="0.3"><span>持有【忘生珍珑】</span><b>+0.3</b></label>
+  <div class="box cloudWrap">
+    <label class="chk" style="border:none"><input type="checkbox" class="f endCoef coef_yunyuqi" data-coef="0.6"><span>持有【云与漆】</span><b>+0.6</b></label>
+    <div class="hint">仅持有【忘生珍珑】时才能持有【云与漆】。</div>
+  </div>
+
+  <h4>结局得分 · 险路恶敌（常规）</h4>
+  <div class="hint">每组二选一：</div>
+  ${pairEnding(uid,'suiA','suiFlawA',[
+    {key:'none',   label:'无',       score:0,   flaw:0},
+    {key:'xiziru', label:'昔字如烟', score:100, flaw:50},
+    {key:'wangxi', label:'往昔难忆', score:150, flaw:50}
+  ])}
+  ${pairEnding(uid,'suiB','suiFlawB',[
+    {key:'none',   label:'无',     score:0,   flaw:0},
+    {key:'mousui', label:'谋岁者', score:100, flaw:50},
+    {key:'moshou', label:'末狩',   score:130, flaw:70}
+  ])}
+
+  <h4>五结局（定乾坤 / 止变，单选）</h4>
+  <select class="f fiveEnd">
+    <option value="none" data-score="0" data-flaw="0" selected>无</option>
+    <option value="dingben" data-score="400" data-flaw="0">定乾坤-定本源 +400</option>
+    <option value="yiqunshou" data-score="400" data-flaw="0">止变-役群兽 +400</option>
+    <option value="changguizhen" data-score="80" data-flaw="20">定乾坤-常规 +80（无漏+20）</option>
+    <option value="huazhenfu" data-score="150" data-flaw="50">止变-化镇抚 +150（无漏+50）</option>
+    <option value="suchengxing" data-score="175" data-flaw="75">止变-溯承形 +175（无漏+75）</option>
+    <option value="gaiduiyi" data-score="200" data-flaw="75">止变-改对弈 +200（无漏+75）</option>
+    <option value="sujiuli" data-score="100" data-flaw="50">止变-塑旧历 +100（无漏+50）</option>
+  </select>
+  <div class="box suiFlawWrap">
+    <label class="chk" style="border:none"><input type="checkbox" class="f suiFlawChk"><span>五结局 · 无漏加分</span><b class="fiveFlawVal">—</b></label>
+    <div class="hint">定乾坤-定本源、止变-役群兽不可用。</div>
+  </div>
+  <div class="box sui3killWrap">
+    <label class="chk" style="border:none"><input type="checkbox" class="f end" data-score="40"><span>止变-役群兽 · 同时歼灭“流泪小子”“高普尼克”“小八界”</span><b>+40</b></label>
+  </div>
+
+  <h4>漏怪数鼓励分（漏怪 &lt; 50 时）</h4>
+  <div class="box leakBlock">
+    <div class="hint">鼓励分 = 150 ×（通关剩余血量 / 进入关卡总血量）；仅定本源 / 役群兽可用。</div>
+    <div class="row3" data-leak="five" style="margin-top:6px">
+      <label>漏怪数<input type="number" class="f leak" value="0" step="1"></label>
+      <label>通关剩余血量<input type="number" class="f hp" value="0"></label>
+      <label>进入总血量<input type="number" class="f maxhp" value="0"></label>
+    </div>
+  </div>
+`;
+
+/* ---------- 沉沦者的黑流树海 ---------- */
+TPL.seaborn = (uid) => `
+  <div class="row">
+    <label>游戏结算分<input type="number" class="f base" value="0"></label>
+    <label>藏品数量（+5/个）<input type="number" class="f collect" value="0" step="1"></label>
+  </div>
+  <div class="row3">
+    <label>紧急作战（+15/个）<input type="number" class="f emerCount" value="0" step="1"></label>
+    <label>襁褓（+40/个）<input type="number" class="f baobao" value="0" step="1"></label>
+    <label>零件（−5/个）<input type="number" class="f parts" value="0" step="1"></label>
+  </div>
+
+  <h4>临时招募</h4>
+  <div class="row3">
+    <label>六星（+30）<input type="number" class="f t6" value="0" step="1"></label>
+    <label>五星（+20）<input type="number" class="f t5" value="0" step="1"></label>
+    <label>四星（+10）<input type="number" class="f t4" value="0" step="1"></label>
+  </div>
+
+  <h4>结算分系数（基础 1.0）</h4>
+  <div class="row">
+    <label>分队系数
+      <select class="f teamCoef">
+        <option value="0" selected>其他 → 0</option>
+        <option value="-0.15">多边贸易 → −0.15</option>
+        <option value="-0.05">地质调查 → −0.05</option>
+        <option value="0.08">文明开化 → +0.08</option>
+      </select>
+    </label>
+    <label>文明开化 · 清除的理想域数量（−0.04/个）<input type="number" class="f ideal" value="0" step="1"></label>
+  </div>
+  <label>【板藤】未出售/丢弃（−0.10/个）<input type="number" class="f banteng" value="0" step="1"></label>
+  <div class="hint">获得以下藏品且切实触发其效果时勾选（每项结算分系数扣除对应值）：</div>
+  <label class="chk"><input type="checkbox" class="f pen" data-pen="0.12"><span>果腹</span><b>−0.12</b></label>
+  <label class="chk"><input type="checkbox" class="f pen" data-pen="0.12"><span>追忆</span><b>−0.12</b></label>
+  <label class="chk"><input type="checkbox" class="f pen" data-pen="0.1"><span>锈蚀的铁锤</span><b>−0.10</b></label>
+  <label class="chk"><input type="checkbox" class="f pen" data-pen="0.08"><span>复得之轮</span><b>−0.08</b></label>
+  <label class="chk"><input type="checkbox" class="f pen" data-pen="0.05"><span>迷藏</span><b>−0.05</b></label>
+
+  <h4>结局得分 · 险路恶敌</h4>
+  <div class="hint">以下三项互斥，五选一：</div>
+  <div class="seEndWrap">
+    ${radioChk(uid,'se','none','无（不通关这三者）',0,true)}
+    ${radioChk(uid,'se','yongwu','永无安宁',200)}
+    ${radioChk(uid,'se','tongku','痛苦将息',300)}
+    ${radioChk(uid,'se','hundun','混沌源阶理论',500,false,100)}
+  </div>
+  <div class="box tongkuFlawWrap">
+    <label class="chk" style="border:none"><input type="checkbox" class="f end" data-score="100"><span>痛苦将息 · 无漏</span><b>+100</b></label>
+  </div>
+  <div class="box hundunFlawWrap">
+    <label class="chk" style="border:none"><input type="checkbox" class="f end" data-score="100"><span>混沌源阶理论 · 无漏</span><b>+100</b></label>
+  </div>
+  <div class="box sandboxWrap">
+    <div class="hint">通关永无安宁 / 痛苦将息 / 混沌源阶理论时：</div>
+    <label class="chk"><input type="checkbox" class="f sandbox_beta"><span>持有【沙盘β】</span><b>+100</b></label>
+    <label class="chk"><input type="checkbox" class="f sandbox_alpha"><span>持有【沙盘α】</span><b>+50</b></label>
+    <div class="chk"><span>同时持有【沙盘β】与【沙盘α】额外加分</span><b>+50</b></div>
+  </div>
+  <div class="box probeWrap">
+    <label>持有【探测先锋】且至少持有一个沙盘藏品 · &lt;痛苦将息&gt;额外分
+      <select class="f probeLayer">
+        <option value="0" selected>未持有 / 无</option>
+        <option value="1">1 层 → +50</option>
+        <option value="2">2 层 → +150</option>
+        <option value="3">3 层 → +250</option>
+        <option value="4">4 层 → +400</option>
+        <option value="5">5 层 → +500</option>
+      </select>
+    </label>
+  </div>
+
+  <h4>畸症</h4>
+  <label class="chk"><input type="checkbox" class="f jizhengChk"><span>通关&lt;畸症&gt;</span><b>+400</b></label>
+  <div class="box jizhengWrap">
+    <label class="chk"><input type="checkbox" class="f jizhengExtra" data-score="100"><span>畸症 · 追猎</span><b>+100</b></label>
+    <label class="chk"><input type="checkbox" class="f jizhengExtra" data-score="100"><span>畸症 · 无漏</span><b>+100</b></label>
+    <div class="hint" style="margin-top:6px">通关&lt;畸症&gt;时持有以下藏品且未在“命运所指”节点提交：</div>
+    <label class="chk"><input type="checkbox" class="f jizhengExtra" data-score="40"><span>【击坠“神明”】</span><b>+40</b></label>
+    <label class="chk"><input type="checkbox" class="f jizhengExtra" data-score="40"><span>【湮没“光明”】</span><b>+40</b></label>
+    <label class="chk"><input type="checkbox" class="f jizhengExtra" data-score="120"><span>【焚毁“文明”】</span><b>+120</b></label>
+  </div>
+`;
+
+/* ============ 计算逻辑 ============ */
+function tempScore(card){ return num(card,'.t6')*30 + num(card,'.t5')*20 + num(card,'.t4')*10; }
+function checkedSum(card, sel){
+  return $$(card, sel).filter(el => el.checked)
+    .reduce((s,el) => s + (parseFloat(el.dataset.score)||0), 0);
+}
+/* 关卡表：通过分 + 该项的无漏分 */
+function stageSum(card){
+  let s = 0;
+  $$(card, 'tr').forEach(tr => {
+    const st = tr.querySelector('.stage'), fl = tr.querySelector('.flaw');
+    if(st && st.checked){
+      s += parseFloat(st.dataset.score)||0;
+      if(fl && fl.checked) s += parseFloat(fl.dataset.score)||0;
+    }
+  });
+  return s;
+}
+function endingSum(card){ return checkedSum(card, '.end'); }
+/* 互斥对得分：单选基础分 + （勾选时）无漏分 */
+function stagePairScore(card, uid, group, flawSel){
+  const sel = card.querySelector('input[name="'+uid+'_'+group+'"]:checked');
+  if(!sel) return 0;
+  let s = parseFloat(sel.dataset.score)||0;
+  const fc = $(card, flawSel);
+  if(fc && fc.checked) s += parseFloat(sel.dataset.flaw)||0;
+  return s;
+}
+function multFactor(card){
+  let f = 1;
+  $$(card,'.mult').filter(e=>e.checked).forEach(e => f += parseFloat(e.dataset.mult)||0);
+  return f;
+}
+function collectTier(n){
+  let s = 0;
+  const a = Math.min(n,100); s += a*5;
+  if(n > 100){ const b = Math.min(n,180)-100; s += b*(-3); }
+  if(n > 180){ s += (n-180)*(-7.5); }
+  return s;
+}
+function radioVal(card, sel, def){
+  const el = $(card, sel);
+  return el ? el.value : def;
+}
+
+function computeCard(card){
+  const theme = card.dataset.theme;
+  const uid   = card.dataset.uid;
+  const base  = num(card,'.base');
+  const temp  = tempScore(card);
+  const bd = [];
+  let final = 0;
+
+  if(theme === 'sarkaz'){
+    const emg  = stageSum(card);
+    const wuzhu = num(card,'.wuzhu')*13;
+    const coll = num(card,'.collect')*5 + num(card,'.emerCount')*15;
+    const coef = parseFloat($(card,'.coef').value) || 1;
+    const pre  = base + emg + coll + temp + wuzhu;
+
+    const sel = card.querySelector('input[name="'+uid+'_ex"]:checked');
+    const exKey = sel ? sel.value : 'none';
+    const exScore = sel ? (parseFloat(sel.dataset.score)||0) : 0;
+    const conf = card.querySelector('.confusion');
+    let confScore = 0;
+    if(conf && conf.checked){
+      if(exKey==='jjsk' || exKey==='swjz') confScore = 10;
+      else if(exKey==='cy' || exKey==='hlcy') confScore = 20;
+    }
+    const sf = card.querySelector('[data-tag="shoufa"]');
+    const br = card.querySelector('[data-tag="burong"]');
+    const auto = ((exKey==='cy'||exKey==='hlcy') && sf && sf.checked && br && br.checked) ? 300 : 0;
+    const end0 = exScore + confScore + endingSum(card) + auto;
+    const mf = multFactor(card);
+    const end = end0 * mf;
+    final = pre*coef + end;
+    bd.push(['游戏结算分', base], ['紧急加分', emg],
+            ['藏品/紧急作战分', coll], ['无主的回忆补偿', wuzhu], ['临时招募', temp],
+            ['小计 × 系数('+coef+')', pre*coef],
+            ['结局得分'+(mf!==1?' ×'+mf:''), end]);
+  }
+  else if(theme === 'sui'){
+    const emg  = num(card,'.emerCount')*15;
+    const coll = collectTier(num(card,'.collect'));
+    const coef = parseFloat($(card,'.teamCoef').value) || 1;
+    const pre  = base + emg + coll + temp;
+
+    const stageEnd = stagePairScore(card, uid, 'suiA', '.suiFlawA')
+                   + stagePairScore(card, uid, 'suiB', '.suiFlawB');
+    const five = $(card,'.fiveEnd');
+    const opt = five.selectedOptions[0];
+    const fiveKey = opt.value;
+    const fiveBase = parseFloat(opt.dataset.score)||0;
+    const flawChk = $(card,'.suiFlawChk');
+    const fiveFlaw = (flawChk && flawChk.checked) ? (parseFloat(opt.dataset.flaw)||0) : 0;
+    let triple = 0;
+    const t3 = $(card,'.sui3killWrap');
+    if(t3 && t3.style.display !== 'none'){
+      const c3 = t3.querySelector('.end');
+      if(c3 && c3.checked && fiveKey==='yiqunshou') triple = 40;
+    }
+    let leakBonus = 0;
+    if(fiveKey==='dingben' || fiveKey==='yiqunshou'){
+      const blk = $(card,'.leakBlock');
+      const leak = num(blk,'.leak'), hp = num(blk,'.hp'), mh = num(blk,'.maxhp');
+      if(leak < 50 && mh > 0) leakBonus = 150 * (hp/mh);
+    }
+    const end0 = stageEnd + fiveBase + fiveFlaw + triple + leakBonus;
+    let ef = 1; $$(card,'.endCoef').filter(e=>e.checked).forEach(e => ef += parseFloat(e.dataset.coef)||0);
+    const wangsheng = $(card,'.coef_wangsheng'), yunyuqi = $(card,'.coef_yunyuqi');
+    if((!wangsheng || !wangsheng.checked) && yunyuqi && yunyuqi.checked){
+      ef -= parseFloat(yunyuqi.dataset.coef)||0; // 云与漆必须以忘生珍瑶为前提
+    }
+    ef = round4(ef);
+    const end = end0 * ef;
+    final = pre*coef + end;
+    bd.push(['游戏结算分', base], ['紧急作战加分', emg],
+            ['藏品分段加分', coll], ['临时招募', temp],
+            ['小计 × 系数('+coef+')', pre*coef],
+            ['险路恶敌加分'+(leakBonus?' (含漏怪鼓励 '+fmt(leakBonus)+')':''), end0],
+            ['结局 × 系数('+ef+')', end]);
+  }
+  else { // seaborn
+    const settle = num(card,'.collect')*5 + num(card,'.emerCount')*15
+                 + num(card,'.baobao')*40 - num(card,'.parts')*5;
+    let coef = 1 + (parseFloat($(card,'.teamCoef').value)||0);
+    if($(card,'.teamCoef').value === '0.08') coef -= num(card,'.ideal')*0.04;
+    coef -= num(card,'.banteng')*0.1;
+    coef -= $$(card,'.pen').filter(e=>e.checked)
+              .reduce((s,e)=>s+(parseFloat(e.dataset.pen)||0),0);
+    const raw = (base + settle + temp) * coef;
+    const capped = Math.min(raw, 4500);
+
+    const seSel = card.querySelector('input[name="'+uid+'_se"]:checked');
+    const seKey = seSel ? seSel.value : 'none';
+    let end = seSel ? (parseFloat(seSel.dataset.score)||0) : 0;
+    [['tongku','.tongkuFlawWrap'],['hundun','.hundunFlawWrap']].forEach(([k,sel]) => {
+      if(seKey===k){ const el = $(card, sel+' .end'); if(el && el.checked) end += 100; }
+    });
+    const beta = $(card,'.sandbox_beta'), alpha = $(card,'.sandbox_alpha');
+    const hasBeta = !!(beta && beta.checked), hasAlpha = !!(alpha && alpha.checked);
+    if(seKey!=='none'){
+      if(hasBeta) end += 100;
+      if(hasAlpha) end += 50;
+      if(hasBeta && hasAlpha) end += 50;
+    }
+    if(seKey==='tongku' && (hasBeta || hasAlpha)){
+      const lv = parseInt($(card,'.probeLayer').value,10)||0;
+      if(lv>=1) end += [0,50,150,250,400,500][lv];
+    }
+    const jz = $(card,'.jizhengChk');
+    if(jz && jz.checked){
+      end += 400 + checkedSum(card, '.jizhengExtra');
+    }
+    final = capped + end;
+    bd.push(['游戏结算分', base], ['结算加分（藏品/紧急/襁褓/零件）', settle],
+            ['临时招募', temp],
+            ['小计 × 系数('+round4(coef)+')', raw]);
+    bd.push(raw > 4500 ? ['折算结算分上限', '4500（超出部分不计）'] : ['折算结算分', capped]);
+    bd.push(['结局得分（含沙盘/探测先锋/畸症）', end]);
+  }
+
+  return {theme, final, bd};
+}
+
+/* ============ 显隐 / 联动 ============ */
+function applyVisibility(card){
+  const theme = card.dataset.theme;
+  const uid = card.dataset.uid;
+
+  if(theme === 'sarkaz'){
+    const sel = card.querySelector('input[name="'+uid+'_ex"]:checked');
+    const key = sel ? sel.value : 'none';
+    const cv = $(card,'.confValue');
+    if(cv) cv.textContent = (key==='jjsk'||key==='swjz') ? '+10' : ((key==='cy'||key==='hlcy') ? '+20' : '—');
+    const sf = $(card,'[data-tag="shoufa"]'), br = $(card,'[data-tag="burong"]');
+    const auto = ((key==='cy'||key==='hlcy') && sf && sf.checked && br && br.checked) ? 300 : 0;
+    const ac = $(card,'.autoCombo');
+    if(ac) ac.textContent = '+'+auto;
+    const zs = $(card,'[data-tag="zhongshen"]');
+    const zsOn = !!(zs && zs.checked);
+    const zw = $(card,'.zhongshenWrap');
+    if(zw) zw.style.display = zsOn ? '' : 'none';
+    if(!zsOn) $$(card,'.zhongshenWrap .end').forEach(el => { el.checked = false; });
+  }
+  else if(theme === 'sui'){
+    // 常规互斥对的无漏联动
+    [['suiA','.suiFlawA'],['suiB','.suiFlawB']].forEach(([g,cls]) => {
+      const sel = card.querySelector('input[name="'+uid+'_'+g+'"]:checked');
+      const flaw = sel ? (parseFloat(sel.dataset.flaw)||0) : 0;
+      const fc = $(card, cls);
+      if(fc){ fc.disabled = (flaw<=0); if(fc.disabled) fc.checked = false; }
+      const fv = $(card, cls+'Val');
+      if(fv) fv.textContent = flaw>0 ? ('+'+flaw) : '—';
+    });
+    // 云与漆仅当持有忘生珍瑶
+    const ws = $(card,'.coef_wangsheng'), yy = $(card,'.coef_yunyuqi');
+    const cw = $(card,'.cloudWrap');
+    const wsOn = !!(ws && ws.checked);
+    if(cw) cw.style.display = wsOn ? '' : 'none';
+    if(!wsOn && yy && yy.checked) yy.checked = false;
+
+    const five = $(card,'.fiveEnd');
+    const opt = five.selectedOptions[0];
+    const key = opt.value, flaw = parseFloat(opt.dataset.flaw)||0;
+    const fc = $(card,'.suiFlawChk');
+    if(fc){ fc.disabled = (flaw<=0); if(fc.disabled) fc.checked = false; }
+    const fw = $(card,'.suiFlawWrap');
+    if(fw) fw.style.display = flaw>0 ? '' : 'none';
+    const fv = $(card,'.fiveFlawVal');
+    if(fv) fv.textContent = flaw>0 ? ('+'+flaw) : '—';
+    const leak = $(card,'.leakBlock');
+    if(leak) leak.style.display = (key==='dingben'||key==='yiqunshou') ? '' : 'none';
+    const t3 = $(card,'.sui3killWrap');
+    if(t3) t3.style.display = (key==='yiqunshou') ? '' : 'none';
+  }
+  else { // seaborn
+    const sel = card.querySelector('input[name="'+uid+'_se"]:checked');
+    const key = sel ? sel.value : 'none';
+    const beta = $(card,'.sandbox_beta'), alpha = $(card,'.sandbox_alpha');
+    const hasSand = !!(beta && beta.checked) || !!(alpha && alpha.checked);
+    const sand = $(card,'.sandboxWrap'); if(sand) sand.style.display = key!=='none' ? '' : 'none';
+    const tk = $(card,'.tongkuFlawWrap'); if(tk) tk.style.display = key==='tongku' ? '' : 'none';
+    const hd = $(card,'.hundunFlawWrap'); if(hd) hd.style.display = key==='hundun' ? '' : 'none';
+    const pr = $(card,'.probeWrap'); if(pr) pr.style.display = (key==='tongku' && hasSand) ? '' : 'none';
+    const jz = $(card,'.jizhengChk'), jw = $(card,'.jizhengWrap');
+    if(jw) jw.style.display = (jz && jz.checked) ? '' : 'none';
+  }
+}
+
+/* ============ 渲染 ============ */
+const THEME_NAME = {sarkaz:'萨卡兹的无终奇语', sui:'岁的界园志异', seaborn:'沉沦者的黑流树海'};
+const defaults = ['sarkaz','sui','seaborn'];
+const playersEl = document.getElementById('players');
+
+function buildCard(i){
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.dataset.theme = defaults[i];
+  card.dataset.uid = 'p'+i;
+  card.innerHTML = `
+    <div class="chead">
+      <input type="text" class="playername" value="选手${i+1}">
+      <select class="theme-sel">
+        <option value="sarkaz">萨卡兹的无终奇语</option>
+        <option value="sui">岁的界园志异</option>
+        <option value="seaborn">沉沦者的黑流树海</option>
+      </select>
+    </div>
+    <div class="cbody"></div>
+    <div class="result">
+      <div class="res-main"><span class="lbl">个人得分</span><span class="val">0</span></div>
+      <div class="bd"></div>
+    </div>`;
+  const sel = card.querySelector('.theme-sel');
+  sel.value = defaults[i];
+  sel.addEventListener('change', () => {
+    card.dataset.theme = sel.value;
+    renderForm(card);
+    recalc();
+  });
+  card.querySelector('.playername').addEventListener('input', recalc);
+  playersEl.appendChild(card);
+  renderForm(card);
+  return card;
+}
+
+function renderForm(card){
+  card.querySelector('.cbody').innerHTML = TPL[card.dataset.theme](card.dataset.uid);
+  $$(card, '.f').forEach(el => {
+    el.addEventListener('input', recalc);
+    el.addEventListener('change', recalc);
+  });
+}
+
+function recalc(){
+  let personalSum = 0;
+  const summaryRows = [];
+  $$(playersEl, '.card').forEach(card => {
+    applyVisibility(card);
+    const {theme, final, bd} = computeCard(card);
+    personalSum += final;
+    const valEl = card.querySelector('.val');
+    valEl.textContent = fmt(final);
+    valEl.className = 'val ' + (final>0?'pos':final<0?'neg':'');
+    card.querySelector('.bd').innerHTML = bd.map(([k,v]) =>
+      `<div><span>${k}</span><b class="${typeof v==='number' ? (v>0?'pos':v<0?'neg':'') : ''}">${typeof v==='number' ? fmt(v) : v}</b></div>`
+    ).join('');
+    const name = card.querySelector('.playername').value || '选手';
+    summaryRows.push(`<tr><td>${escapeHtml(name)}</td><td>${THEME_NAME[theme]}</td>
+      <td class="num ${final>0?'pos':final<0?'neg':''}" style="text-align:right">${fmt(final)}</td></tr>`);
+  });
+
+  const extra6 = num(document,'#c_extra6'), extra5 = num(document,'#c_extra5');
+  const overflow = num(document,'#c_overflow'), chef = num(document,'#c_chef');
+  const overtime = num(document,'#c_overtime');
+  const commonNet = chef*100 - (extra6*500 + extra5*250 + overflow*50 + overtime*20);
+  const ct = document.getElementById('commonTotal');
+  ct.textContent = fmt(commonNet);
+  ct.className = commonNet>0 ? 'pos' : (commonNet<0 ? 'neg' : '');
+
+  document.getElementById('summaryBody').innerHTML = summaryRows.join('');
+  document.getElementById('personalSum').textContent = fmt(personalSum);
+  document.getElementById('commonDeduct').textContent = fmt(commonNet);
+  const grand = personalSum + commonNet;
+  const gt = document.getElementById('grandTotal');
+  gt.textContent = fmt(grand);
+  gt.className = 'num ' + (grand>0?'pos':grand<0?'neg':'');
+  const tt = document.getElementById('teamTotal');
+  tt.textContent = fmt(grand);
+  tt.className = 'team-total ' + (grand>0?'pos':grand<0?'neg':'');
+}
+function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+/* ============ 配置导入 / 导出 ============ */
+function cardFields(card){
+  return $$(card, '.cbody input, .cbody select');
+}
+function collectConfig(){
+  const players = $$(playersEl, '.card').map(card => ({
+    name: card.querySelector('.playername').value,
+    theme: card.dataset.theme,
+    fields: cardFields(card).map(el =>
+      (el.type === 'checkbox' || el.type === 'radio')
+        ? { checked: el.checked }
+        : { value: el.value }
+    )
+  }));
+  return {
+    version: 1,
+    teamName: document.getElementById('teamName').value,
+    common: {
+      extra6:   num(document, '#c_extra6'),
+      extra5:   num(document, '#c_extra5'),
+      overflow: num(document, '#c_overflow'),
+      chef:     num(document, '#c_chef'),
+      overtime: num(document, '#c_overtime')
+    },
+    players
+  };
+}
+function applyConfig(cfg){
+  if(!cfg || typeof cfg !== 'object') throw new Error('文件内容不是有效的配置');
+  document.getElementById('teamName').value = cfg.teamName || '';
+  const cm = cfg.common || {};
+  const setVal = (id, v) => { document.getElementById(id).value = (v === undefined || v === null) ? 0 : v; };
+  setVal('c_extra6', cm.extra6); setVal('c_extra5', cm.extra5);
+  setVal('c_overflow', cm.overflow); setVal('c_chef', cm.chef); setVal('c_overtime', cm.overtime);
+
+  const cards = $$(playersEl, '.card');
+  (cfg.players || []).forEach((p, i) => {
+    const card = cards[i]; if(!card) return;
+    card.querySelector('.playername').value = p.name || ('选手' + (i+1));
+    const sel = card.querySelector('.theme-sel');
+    if(p.theme && TPL[p.theme]){ sel.value = p.theme; card.dataset.theme = p.theme; }
+    renderForm(card);
+    const els = cardFields(card);
+    (p.fields || []).forEach((f, j) => {
+      const el = els[j]; if(!el) return;
+      if(f.checked !== undefined) el.checked = !!f.checked;
+      else if(f.value !== undefined) el.value = f.value;
+    });
+  });
+  recalc();
+}
+function safeFileName(s){
+  return (s || '').replace(/[\\/:*?"<>|\r\n]+/g, '_').replace(/^\.+|\.+$/g, '').trim();
+}
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const cfg = collectConfig();
+  const team = safeFileName(cfg.teamName) || '未命名队伍';
+  const blob = new Blob([JSON.stringify(cfg, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = team + '-得分情况.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change', e => {
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      applyConfig(JSON.parse(reader.result));
+    } catch(err) {
+      alert('导入失败：' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+/* 拖拽导入：把 .json 文件拖到页面上 */
+document.addEventListener('dragover', e => e.preventDefault());
+document.addEventListener('drop', e => {
+  e.preventDefault();
+  const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => { try { applyConfig(JSON.parse(reader.result)); } catch(err){ alert('导入失败：' + err.message); } };
+  reader.readAsText(file);
+});
+
+/* 视图切换 */
+$$(document,'.tab').forEach(btn => btn.addEventListener('click', () => {
+  $$(document,'.tab').forEach(b => b.classList.toggle('active', b === btn));
+  const v = btn.dataset.view;
+  document.getElementById('view-individual').style.display = (v === 'individual') ? '' : 'none';
+  document.getElementById('view-team').style.display = (v === 'team') ? '' : 'none';
+}));
+
+/* 初始化 */
+[0,1,2].forEach(buildCard);
+recalc();
+
+/* 重置 */
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if(!confirm('确定要重置所有输入吗？')) return;
+  document.getElementById('teamName').value = '';
+  ['c_extra6','c_extra5','c_overflow','c_chef','c_overtime'].forEach(id => document.getElementById(id).value = 0);
+  playersEl.innerHTML = '';
+  [0,1,2].forEach(buildCard);
+  recalc();
+});
+</script>
+</body>
+</html>
