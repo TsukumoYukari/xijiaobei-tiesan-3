@@ -361,7 +361,7 @@ TPL.seaborn = (uid) => `
         <option value="0.08">文明开化 → +0.08</option>
       </select>
     </label>
-    <label>文明开化 · 清除的理想域数量（−0.04/个）<input type="number" class="f ideal" value="0" step="1"></label>
+    <label>文明开化 · 清除的理想域数量（−0.05/个）<input type="number" class="f ideal" value="0" step="1"></label>
   </div>
   <label>【板藤】未出售/丢弃（−0.10/个）<input type="number" class="f banteng" value="0" step="1"></label>
   <div class="hint">获得以下藏品且切实触发其效果时勾选（每项结算分系数扣除对应值）：</div>
@@ -542,7 +542,7 @@ function computeCard(card){
     const settle = num(card,'.collect')*5 + num(card,'.emerCount')*15
                  + num(card,'.baobao')*40 - num(card,'.parts')*5;
     let coef = 1 + (parseFloat($(card,'.teamCoef').value)||0);
-    if($(card,'.teamCoef').value === '0.08') coef -= num(card,'.ideal')*0.04;
+    if($(card,'.teamCoef').value === '0.08') coef -= num(card,'.ideal')*0.05;
     coef -= num(card,'.banteng')*0.1;
     coef -= $$(card,'.pen').filter(e=>e.checked)
               .reduce((s,e)=>s+(parseFloat(e.dataset.pen)||0),0);
